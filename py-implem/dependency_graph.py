@@ -11,13 +11,13 @@ class Element:
         self.pair: Element = None
         
         self.is_in_basis = False
-        self.is_singleton = False
+        self.is_meta = False
 
     def __str__(self) -> str:
-        return f'e{self.element_id},p{self.pair_id}-({self.edge[0]}, {self.edge[1]})' + ('s' if self.is_singleton else '')
+        return f'e{self.element_id},p{self.pair_id}-({self.edge[0]}, {self.edge[1]})' + ('s' if self.is_meta else '')
 
     def __repr__(self) -> str:
-        return f'(e{self.element_id}, p{self.pair_id}, b:{"t" if self.is_in_basis else "f"}, s:{"t" if self.is_singleton else "f"})'
+        return f'(e{self.element_id}, p{self.pair_id}, b:{"t" if self.is_in_basis else "f"}, s:{"t" if self.is_meta else "f"})'
     
     def __hash__(self) -> int:
         return self.element_id
@@ -40,7 +40,7 @@ class DependencyGraph:
         if not matching:
             matching = []
 
-        self.basis = []
+        self.basis: list[Element] = []
         
         self.elements: dict[int, Element] = {}
         self.singletons = []
@@ -64,7 +64,15 @@ class DependencyGraph:
         if key in self.elements.keys():
             raise RuntimeError('trying to add an element with an already existing id')
         self.elements[key] = elem
-        
+    
+    def get_matching_from_basis(self) -> list[int]:
+        matching: list[int] = []
+        for e in self.basis:
+            if e.is_meta:
+                continue
+            matching.append(e.element_id)
+        return matching
+
     def _compute_adj_(self, graph: base_graph.BaseGraph, matching: list[int]):
         basis_edges, n_b, parent_forest = graph.get_spanning_forest(matching)
         non_basis: list[Element] = [self.elements[edge_to_element_id(n)] for n in n_b]
@@ -75,7 +83,7 @@ class DependencyGraph:
             if not eid in self.elements.keys():
                 self.elements[eid] = Element(e)
                 self.singletons.append(eid)
-                self.elements[eid].is_singleton = True
+                self.elements[eid].is_meta = True
             self.elements[eid].is_in_basis = True
             self.basis.append(self.elements[eid])
 
