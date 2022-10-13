@@ -12,4 +12,4 @@ if __name__ == "__main__":
         dep_graph = dependency_graph.DependencyGraph(graph, matching_ids)
         sol = solver.Solver(dep_graph)
     
-    print(matching_ids)
+    print(sorted(matching_ids))

@@ -6,8 +6,9 @@ class Element:
         self.adjacency: list[Element] = []
         self.edge = edge
 
-        self.element_id: int = edge[2][base_graph.ELEMENT_ID_KEY]
-        self.pair_id: int = edge[2][base_graph.PAIR_ID_KEY]
+        if not self.edge is None:
+            self.element_id: int = edge[2][base_graph.ELEMENT_ID_KEY]
+            self.pair_id: int = edge[2][base_graph.PAIR_ID_KEY]
         self.pair: Element = None
         
         self.is_in_basis = False
@@ -60,7 +61,7 @@ class DependencyGraph:
         elem1.adjacency.append(elem2)
         elem2.adjacency.append(elem1)
     
-    def add_element(self, key: int, elem: Element, increment_id: bool = False):
+    def add_element(self, key: int, elem: Element):
         if key in self.elements.keys():
             raise RuntimeError('trying to add an element with an already existing id')
         self.elements[key] = elem
