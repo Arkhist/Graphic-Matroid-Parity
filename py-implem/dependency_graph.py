@@ -15,10 +15,10 @@ class Element:
         self.is_meta = False
 
     def __str__(self) -> str:
-        return f'e{self.element_id},p{self.pair_id}-({self.edge[0]}, {self.edge[1]})' + ('s' if self.is_meta else '')
+        return f'e{self.element_id},p{self.pair_id}-({self.edge[0] if self.edge is not None else "x"}, {self.edge[1] if self.edge is not None else "x"})' + ('s' if self.is_meta else '')
 
     def __repr__(self) -> str:
-        return f'(e{self.element_id}, p{self.pair_id}, b:{"t" if self.is_in_basis else "f"}, s:{"t" if self.is_meta else "f"})'
+        return f'(elem: {self.element_id}, pair: {self.pair_id}{", base" if self.is_in_basis else ""}{", s" if self.is_meta else ""})'
     
     def __hash__(self) -> int:
         return self.element_id
@@ -72,6 +72,12 @@ class DependencyGraph:
             if e.is_meta:
                 continue
             matching.append(e.element_id)
+        matching = sorted(matching)
+
+        # Assertion: the matching must be pairs
+        if len(matching) % 2 != 0 or not all((x+1 in matching) if x % 2 == 0 else (x-1 in matching) for x in matching):
+            raise AssertionError("computed matching isn't pairs", matching)
+        
         return matching
 
     def _compute_adj_(self, graph: base_graph.BaseGraph, matching: list[int]):
@@ -89,13 +95,16 @@ class DependencyGraph:
             self.basis.append(self.elements[eid])
 
         for e in non_basis:
-            # Backtracking to find the cycle with e
+            # Backtracking to find the cycle with e = (u,v)
             current = e.edge[0]
+
+            # We build the path from u to r (root of current tree)
             backtrack_first: list[Element | int] = [current]
             while parent_forest[current][0] != current:
                 backtrack_first += [parent_forest[current][1], parent_forest[current][0]]
                 current = parent_forest[current][0]
             
+            # We then 
             backtrack_second: list[Element] = []
             current = e.edge[1]
             while True:
@@ -122,7 +131,7 @@ class DependencyGraph:
         lines = []
         for e in self.elements.values():
             if e.is_in_basis:
-                lines.append(str(e) + ': ' + ', '.join([str(x) for x in e.adjacency]))
+                lines.append('\t\t' + str(e) + ': ' + ', '.join([str(x) for x in e.adjacency]))
         return '\n'.join(lines)
                         
 

@@ -4,6 +4,8 @@ import base_graph as bg
 UNLABELED_SER = 99999999
 NO_BLOSSOM = -1
 
+VERBOSE = False
+
 class Transform(dg.Element):
     def __init__(self, tip1: dg.Element, tip2: dg.Element, bud: dg.Element):
         super().__init__(None)
@@ -12,6 +14,7 @@ class Transform(dg.Element):
         self.bud = bud
         self.tip1 = tip1
         self.tip2 = tip2
+        self.edge = (tip1, tip2)
 
 class Property:
     def __init__(self, element: dg.Element):
@@ -21,6 +24,11 @@ class Property:
         self.previous: dg.Element = None
         self.blossom_id = NO_BLOSSOM
         self.is_tip = False
+
+
+def log(*args, **kwargs):
+    if VERBOSE:
+        print(*args, **kwargs)
 
 class Solver:
     def __init__(self, dep_graph: dg.DependencyGraph):
@@ -40,10 +48,12 @@ class Solver:
         self.next_serial += 1
         self.elem_properties[elem].previous = previous
         self.queue.append(elem)
+        log('\t\t\tLabelled',elem,'with s:',self.next_serial-1, 'p:', previous)
 
     def _compute_transform_(self, bud: dg.Element, tip1: dg.Element, tip2: dg.Element):
         x = Transform(tip1, tip2, bud)
         x.element_id = self.next_element_id
+        x.pair_id = x.tip1.pair_id
         self.dep_graph.add_element(self.next_element_id, x)
         self.next_element_id += 1
         
@@ -57,6 +67,8 @@ class Solver:
             self.dep_graph.make_adjacent(x, a)
         
         self.elem_properties[x] = Property(x)
+        log('\t\t\tCreated transform', x)
+        log('\t\t\t  with adj:', ' '.join([str(e) for e in x.adjacency]))
         return x
     
     def _merge_into_blossom_(self, ebunch: list[dg.Element]):
@@ -83,13 +95,14 @@ class Solver:
         self._label_(x, bud)
 
 
-    def _compute_search_path_(self, elem: dg.Element) -> list[dg.Element]:
-        if isinstance(elem, Transform):
-            elem = elem.tip1
-        path: list[dg.Element] = [elem]
+    def _compute_search_path_(self, elem: dg.Element, detransform=False) -> list[dg.Element]:
+        path_elem = elem
+        if isinstance(elem, Transform) and detransform:
+            path_elem = elem.tip1
+        path: list[dg.Element] = [path_elem]
         if self.elem_properties[elem].previous is None:
             return path
-        path.append(elem.pair)
+        path.append(path_elem.pair)
         return path + self._compute_search_path_(self.elem_properties[elem].previous)
 
     def _compute_primitive_bud_(self, elem1: dg.Element, elem2: dg.Element):
@@ -109,8 +122,8 @@ class Solver:
         return None
 
     def _augment_(self, elem1: dg.Element, elem2: dg.Element):
-        path1 = self._compute_search_path_(elem1)
-        path2 = self._compute_search_path_(elem2)
+        path1 = self._compute_search_path_(elem1, detransform=True)
+        path2 = self._compute_search_path_(elem2, detransform=True)
         for e in path1 + path2:
             if e.is_in_basis:
                 e.is_in_basis = False
@@ -121,52 +134,52 @@ class Solver:
 
     def _blossom_(self, elem1: dg.Element, elem2: dg.Element, root_bud: dg.Element):
         bud_blossom = self.elem_properties[root_bud].blossom_id
-        p1 = self._compute_search_path_(elem1)
-        p2 = self._compute_search_path_(elem2)
+        path1 = self._compute_search_path_(elem1)
+        path2 = self._compute_search_path_(elem2)
 
-        b1: dg.Element = None
-        b2: dg.Element = None
-        b1_i: int = -1
-        b2_i: int = -1
+        bud1: dg.Element = None
+        bud2: dg.Element = None
+        bud1_index: int = -1
+        bud2_index: int = -1
 
-        for i, e in enumerate(p1):
+        for i, e in enumerate(path1):
             if (bud_blossom != NO_BLOSSOM and self.elem_properties[e] == bud_blossom) or e == root_bud:
-                b1 = e
-                b1_i = i
+                bud1 = e
+                bud1_index = i
                 break
-        for i, e in enumerate(p2):
+        for i, e in enumerate(path2):
             if (bud_blossom != NO_BLOSSOM and self.elem_properties[e] == bud_blossom) or e == root_bud:
-                b2 = e
-                b1_i = i
+                bud2 = e
+                bud2_index = i
                 break
         
-        t1: dg.Element = None
-        t2: dg.Element = None
+        tip1: dg.Element = None
+        tip2: dg.Element = None
 
-        if b1 == b2:
-            t1 = p1[b1_i - 1]
-            t2 = p2[b2_i - 1]
+        if bud1 == bud2:
+            tip1 = path1[bud1_index - 1]
+            tip2 = path2[bud2_index - 1]
         
         to_label: dict[dg.Element, tuple[int, dg.Element]] = {}
-        for i, e in enumerate(p1):
-            if e == t1 or e == b1:
+        for i, e in enumerate(path1):
+            if e == tip1 or e == bud1:
                 break
             e_p = self.elem_properties[e]
             if e_p.serial != UNLABELED_SER:
                 continue
             if e_p.blossom_id != NO_BLOSSOM and not e_p.is_tip:
                 continue
-            previous = elem2 if i <= 1 else p1[i-2]
+            previous = elem2 if i <= 1 else path1[i-2]
             to_label[e] = (self.elem_properties[e.pair].serial, previous)
-        for e in p2:
-            if e == t2 or e == b2:
+        for e in path2:
+            if e == tip2 or e == bud2:
                 break
             e_p = self.elem_properties[e]
             if e_p.serial != UNLABELED_SER:
                 continue
             if e_p.blossom_id != NO_BLOSSOM and not e_p.is_tip:
                 continue
-            previous = elem1 if i <= 1 else p2[i-2]
+            previous = elem1 if i <= 1 else path2[i-2]
             to_label[e] = (self.elem_properties[e.pair].serial, previous)
         
         label_list = sorted(to_label.keys(), reverse=True, key=lambda e: to_label[e][0])
@@ -182,54 +195,63 @@ class Solver:
                     if self.elem_properties[e].blossom_id == g_p.blossom_id:
                         self.elem_properties[e].is_tip = False
         
-        if t1 is not None:
-            x = self._compute_transform_(b1, t1, t2)
-            self._label_(x, t1.pair)
-        
         new_blossom = []
-        for e in p1:
-            if e == b1:
-                break
-            new_blossom.append(e)
-        for e in p2:
-            if e == b2:
-                break
-            new_blossom.append(e)
-        if t1 is not None:
-            self.elem_properties[t1].is_tip = True
-            self.elem_properties[t2].is_tip = True
+        if tip1 is not None:
+            x = self._compute_transform_(bud1, tip1, tip2)
+            self._label_(x, tip1.pair)
+            new_blossom.append(x)
         
-        self._merge_into_blossom_(new_blossom + [x])
+        for e in path1:
+            if e == bud1:
+                break
+            new_blossom.append(e)
+        for e in path2:
+            if e == bud2:
+                break
+            new_blossom.append(e)
+        if tip1 is not None:
+            self.elem_properties[tip1].is_tip = True
+            self.elem_properties[tip2].is_tip = True
+        
+        self._merge_into_blossom_(new_blossom)
 
     def improve_matching(self):
+        log('Improving matching:', self.dep_graph.basis)
+        if VERBOSE:
+            print(self.dep_graph)
         # We label all singletons
         for singleton_id in self.dep_graph.singletons:
             singleton = self.dep_graph.elements[singleton_id]
+            log('\tLabelling singleton', singleton)
             self._label_(singleton, None)
 
         while len(self.queue) > 0:
             current = self.queue.pop(0)
             current.adjacency.sort(key=lambda e: self.elem_properties[e].serial)
+            log('\tScanning element', current)
 
             for adjacent in current.adjacency:
                 # If the adjacent is equivalent to the current
                 if self.elem_properties[adjacent].blossom_id != NO_BLOSSOM and self.elem_properties[adjacent].blossom_id == self.elem_properties[current].blossom_id:
                     continue
-                
 
                 if self.elem_properties[adjacent].serial != UNLABELED_SER and self.elem_properties[adjacent].serial < self.elem_properties[current].serial:
                     bud = self._compute_primitive_bud_(current, adjacent)
                     if bud is None:
+                        log('\t\tAugment step/', current, adjacent)
                         self._augment_(current, adjacent)
                         return True
                     else:
+                        log('\t\tBlossom step/ bud:', bud, 'x1:', current, 'x2:', adjacent)
                         self._blossom_(current, adjacent, bud)
                 
                 elif self.elem_properties[adjacent].serial == UNLABELED_SER and self.elem_properties[adjacent.pair].serial == UNLABELED_SER and self.elem_properties[adjacent].blossom_id == NO_BLOSSOM:
                     adjacent_pair = adjacent.pair
                     if adjacent_pair in current.adjacency:
+                        log('\t\tDegenerate blossom step/ bud:', current, 'x1:', adjacent, 'x2:', adjacent_pair)
                         self._compute_degenerate_blossom_(current, adjacent, adjacent_pair)
                     else:
+                        log('\t\tLabel step/', adjacent)
                         self._label_(adjacent_pair, current)
         
         return False

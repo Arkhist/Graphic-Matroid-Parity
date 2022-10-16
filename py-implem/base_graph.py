@@ -49,13 +49,14 @@ class BaseGraph:
 
         Returns the forest, the elements not in the forest as well as a rooted representation
         """
-        uf_set = list(range(len(self.nx_instance.nodes())))
+        uf_set = list(range(max(list(self.nx_instance.nodes()))+1))
         if not matching:
             matching = []
         
         forest = []
         non_forest = []
         
+        # Establish the base forest, with no singletons
         for edge in self.edges():
             if not edge[2][ELEMENT_ID_KEY] in matching:
                 non_forest.append(edge)
@@ -67,6 +68,7 @@ class BaseGraph:
         
         next_singleton_id = self.max_element_id + 1
 
+        # Add the singletons necessary to have a spanning forest
         for edge in self.edges():
             if uf.uf_find(uf_set, edge[0]) == uf.uf_find(uf_set, edge[1]):
                 continue
@@ -75,7 +77,7 @@ class BaseGraph:
             next_singleton_id = next_singleton_id + 1
             forest.append(singleton)
 
-        # Compute a rooted forest representation
+        # Compute a rooted forest representation by greedily doing Depth-First explorations
         remaining = self.nodes()
         edges_remaining = forest[:]
         parent = {}
@@ -101,8 +103,6 @@ class BaseGraph:
                     edges_to_remove.append(e)
                 for e in edges_to_remove:
                     edges_remaining.remove(e)
-
-                    
 
         return forest, non_forest, parent
 
