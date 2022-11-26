@@ -22,6 +22,7 @@ class Property:
 
         self.serial: int = UNLABELED_SER
         self.previous: dg.Element = None
+        self.reverse: dg.Element = None
         self.blossom_id = NO_BLOSSOM
         self.is_tip = False
 
@@ -43,10 +44,11 @@ class Solver:
 
         self.queue: list[dg.Element] = []
 
-    def _label_(self, elem: dg.Element, previous: dg.Element):
+    def _label_(self, elem: dg.Element, previous: dg.Element, reverse: dg.Element = None):
         self.elem_properties[elem].serial = self.next_serial
         self.next_serial += 1
         self.elem_properties[elem].previous = previous
+        self.elem_properties[elem].reverse = reverse
         self.queue.append(elem)
         log('\t\t\tLabelled',elem,'with s:',self.next_serial-1, 'p:', previous)
 
@@ -96,18 +98,25 @@ class Solver:
 
 
     def _compute_search_path_(self, elem: dg.Element, detransform=False) -> list[dg.Element]:
-        path_elem = elem
-        if isinstance(elem, Transform) and detransform:
-            path_elem = elem.tip1
-        path: list[dg.Element] = [path_elem]
-        if self.elem_properties[elem].previous is None:
-            return path
-        path.append(path_elem.pair)
-        return path + self._compute_search_path_(self.elem_properties[elem].previous)
+        props = self.elem_properties[elem]
+        if not isinstance(elem, Transform):
+            if props.previous is None:
+                return [elem]
+            if props.reverse is not None:
+                rev_path = self._compute_search_path_(props.reverse, detransform)
+                rev_path = list(reversed(rev_path[:rev_path.index(elem)+1]))
+                return rev_path + self._compute_search_path_(props.previous, detransform)
+            else:
+                return [elem, elem.pair] + self._compute_search_path_(props.previous, detransform)
+        else:
+            if props.reverse is None:
+                return [elem.tip1 if detransform else elem, elem.pair] + self._compute_search_path_(props.previous, detransform)
+            else:
+                rev_path = self._compute_search_path_(props.reverse, detransform)
+                rev_path = list(reversed(rev_path[:rev_path.index(elem.tip1)]))
+                return [elem.tip1 if detransform else elem] + rev_path + self._compute_search_path_(props.previous, detransform)
 
     def _compute_primitive_bud_(self, elem1: dg.Element, elem2: dg.Element):
-        bud: dg.Element = None
-
         path1 = self._compute_search_path_(elem1)
         path2 = self._compute_search_path_(elem2)
 
@@ -159,8 +168,8 @@ class Solver:
         if bud1 == bud2:
             tip1 = path1[bud1_index - 1]
             tip2 = path2[bud2_index - 1]
-        
-        to_label: dict[dg.Element, tuple[int, dg.Element]] = {}
+                
+        to_label: dict[dg.Element, tuple[int, dg.Element, dg.Element]] = {}
         for i, e in enumerate(path1):
             if e == tip1 or e == bud1:
                 break
@@ -169,8 +178,8 @@ class Solver:
                 continue
             if e_p.blossom_id != NO_BLOSSOM and not e_p.is_tip:
                 continue
-            previous = elem2 if i <= 1 else path1[i-2]
-            to_label[e] = (self.elem_properties[e.pair].serial, previous)
+            #previous = elem2 if i <= 1 else path1[i-2]
+            to_label[e] = (self.elem_properties[e.pair].serial, elem1, elem2)
         for e in path2:
             if e == tip2 or e == bud2:
                 break
@@ -179,8 +188,8 @@ class Solver:
                 continue
             if e_p.blossom_id != NO_BLOSSOM and not e_p.is_tip:
                 continue
-            previous = elem1 if i <= 1 else path2[i-2]
-            to_label[e] = (self.elem_properties[e.pair].serial, previous)
+            #previous = elem1 if i <= 1 else path2[i-2]
+            to_label[e] = (self.elem_properties[e.pair].serial, elem2, elem1)
         
         label_list = sorted(to_label.keys(), reverse=True, key=lambda e: to_label[e][0])
 
@@ -188,7 +197,7 @@ class Solver:
             g_p = self.elem_properties[g]
             if g_p.blossom_id != NO_BLOSSOM and not g_p.is_tip:
                 continue
-            self._label_(g, to_label[g][1])
+            self._label_(g, to_label[g][2], reverse=to_label[g][1])
             if g_p.is_tip:
                 g_p.is_tip = False
                 for e in self.elem_properties.keys():
@@ -198,7 +207,7 @@ class Solver:
         new_blossom = []
         if tip1 is not None:
             x = self._compute_transform_(bud1, tip1, tip2)
-            self._label_(x, tip1.pair)
+            self._label_(x, elem2, reverse=elem1)
             new_blossom.append(x)
         
         for e in path1:

@@ -68,4 +68,3 @@ def read_base_graph_from_stsh_input() -> tuple[base_graph.BaseGraph, list[int]]:
         result.add_edge(edge[0], edge[1], edge[2])
     
     return result, matching
-    
