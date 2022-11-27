@@ -40,12 +40,9 @@ class BaseGraph:
     def adjacent_edges(self, edge: BaseEdge) -> list[BaseEdge]:
         return list(self.nx_instance.edges([edge[0], edge[1]], data=True))
     
-    def get_edge(self, i: int) -> BaseEdge:
-        pass
-    
     def get_spanning_forest(self, matching: list[int] = None) -> None | tuple[list[BaseEdge], list[BaseEdge], dict[int, tuple[int, int]]]:
         """
-        Get a spanning maximum forest of the graph
+        Get a spanning maximum forest of the graph, used for completing a matching into a basis.
 
         Returns the forest, the elements not in the forest as well as a rooted representation
         """
@@ -82,11 +79,11 @@ class BaseGraph:
         edges_remaining = forest[:]
         parent = {}
         stack = []
-        while len(remaining) > 0:
+        while len(remaining) > 0: # pick a root
             root = remaining.pop()
             parent[root] = (root, None)
             stack.append(root)
-            while len(stack) > 0:
+            while len(stack) > 0: # do a DFS from that root
                 current = stack.pop()
                 edges_to_remove = []
                 for e in edges_remaining:

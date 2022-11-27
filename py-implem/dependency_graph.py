@@ -81,6 +81,11 @@ class DependencyGraph:
         return matching
 
     def _compute_adj_(self, graph: base_graph.BaseGraph, matching: list[int]):
+        """
+        Computes the adjacencies of each element of the graph.
+        We do this by finding the elementary cycle created when adding a non-basis edge to the forest, for all such edges.
+        This is done through the use of a rooted representation of the forest provided by the base graph object.
+        """
         basis_edges, n_b, parent_forest = graph.get_spanning_forest(matching)
         non_basis: list[Element] = [self.elements[edge_to_element_id(n)] for n in n_b]
 

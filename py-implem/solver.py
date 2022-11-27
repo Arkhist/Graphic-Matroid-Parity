@@ -86,6 +86,7 @@ class Solver:
                     p.blossom_id = self.next_blossom_id
         
         self.next_blossom_id += 1
+        log('\t\t\tCreated blossom:',new_blossom)
         self.blossoms.append(new_blossom)
         
 
@@ -152,12 +153,12 @@ class Solver:
         bud2_index: int = -1
 
         for i, e in enumerate(path1):
-            if (bud_blossom != NO_BLOSSOM and self.elem_properties[e] == bud_blossom) or e == root_bud:
+            if (bud_blossom != NO_BLOSSOM and self.elem_properties[e].blossom_id == bud_blossom) or e == root_bud:
                 bud1 = e
                 bud1_index = i
                 break
         for i, e in enumerate(path2):
-            if (bud_blossom != NO_BLOSSOM and self.elem_properties[e] == bud_blossom) or e == root_bud:
+            if (bud_blossom != NO_BLOSSOM and self.elem_properties[e].blossom_id == bud_blossom) or e == root_bud:
                 bud2 = e
                 bud2_index = i
                 break
@@ -168,7 +169,7 @@ class Solver:
         if bud1 == bud2:
             tip1 = path1[bud1_index - 1]
             tip2 = path2[bud2_index - 1]
-                
+                                
         to_label: dict[dg.Element, tuple[int, dg.Element, dg.Element]] = {}
         for i, e in enumerate(path1):
             if e == tip1 or e == bud1:
@@ -204,7 +205,8 @@ class Solver:
                     if self.elem_properties[e].blossom_id == g_p.blossom_id:
                         self.elem_properties[e].is_tip = False
         
-        new_blossom = []
+        # The new blossom always contains x1 and x2
+        new_blossom = [elem1, elem2]
         if tip1 is not None:
             x = self._compute_transform_(bud1, tip1, tip2)
             self._label_(x, elem2, reverse=elem1)

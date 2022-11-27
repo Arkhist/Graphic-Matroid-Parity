@@ -3,6 +3,7 @@ import dependency_graph
 import solver
 import base_graph
 
+solver.VERBOSE = True
 
 """
 Python implementation of Stallmann's algorithm for Graphic Matroid Parity
