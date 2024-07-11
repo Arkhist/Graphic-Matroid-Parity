@@ -1,23 +1,28 @@
 # Matroid-Parity
+
 This directory contains all files needed to run the cardinality matroid 
 parity program based on the algorithm described in Gabow and Stallmann, 
 *An Augmenting Path Algorithm for Linear Matroid Parity*, Combinatorica 
-6,2 (1986) 123-150. The program was written in Summer, 1985, by Gerald M. 
+6,2 (1986) 123-150. 
+
+In the main directory you will find a Python implementation for Graphic Matroid Parity by
+Benjamin Peyrille (Gardes-Sol) made in 2022, who may be contacted at `benjamin.peyrille@grenoble-inp.fr`.
+
+The original implementation in Pascal was written in Summer, 1985, by Gerald M. 
 Shapiro under the direction of Matthias (Matt) Stallmann, who may be contacted at
 `mfms@ncsu.edu`
 
 Please see the LICENSE file for information about condiditions of use.
 
-If you use this program, let me know how you used it and send me 
-any corrections, modifications, or reimplementations (email: mfms@ncsu.edu).
+If you use this program, let us know how you used it and send us 
+any corrections, modifications, or reimplementations.
 
-To compile with `fpc`, use the `-Miso` option.
+## Usage
 
-** CAUTION **
-*There appears to be a bug. More information is in the Counterexample subdirectory. The relevant input is counterexample.txt.*
+Install the Python library `networkx` (to install: `python -m pip install networkx`).
 
-Input to the parity program (from stdin) takes the following format:
-(edges come in pairs, so edge 2k-1 and 2k form a pair)
+Run `main.py` with `python` (3.10+), which will read from standard input (stdin) an input with the following format (edges come in pairs, so edge 2k-1 and 2k form a pair):
+
 ```
         <number of vertices>
         <edge 1 -- two numbers giving the endpoints>
@@ -34,51 +39,9 @@ Input to the parity program (from stdin) takes the following format:
         0
         <comments>
 ```
+
 The specification of an initial matching is optional.
 Comments can be appended to any line of the input. Anything beyond the first two numbers is ignored.
-
-All modules of the parity program are consolidated in `parpgm.p`.
-
-The function IncreaseMatching implements the algorithm of an earlier version of our paper.
-**Note:** This program is independent of the type of matroid. Other types of matroids can be used if appropriate supporting routines for defining transforms, dependence graph adjacencies, etc. are provided.
-
-The modules are also available in the following separate files.
-
-`userGlob.p` -- contains definitions of various global constants, types,
-	and variables that the user may want to change (e.g. maximum
-	number of elements allowed).
-
-`parityGlob.p` -- contains global definitions that are independent of the
-	type or size of matroids used.
-
-`input-output.p` -- contains I/O routines; comments in this module explain
-	the required format for the input.
-
-`trace-module.p` -- contains routines that do trace printout of the progress
-	of the algorithm (these should be modified to suit the taste of the
-	user -- some could be turned into "stubs" if the corresponding print-
-	out is not wanted).
-
-`blossom-augment.p` -- contains routines that perform blossom and augment
-	steps.
-
-`depgraph.p` -- contains routines that access the dependence graph. Two
-	subordinate modules, transforms.p and singletons.p handle situations
-	unique to transforms and singletons.
-
-`graph.p` -- implements an abstract data type GRAPH (as described in AHU 1983).
-	This module may be useful in other graph algorithms, also.
-
-`spforest.p` -- this module maintains a spanning forest (i.e. the current base),
-	using preorder numbering to determine adjacencies of elements not
-	in the forest.
-
-`queues.p` -- general purpose routines for queues
-
-`equiv.p` -- maintains the Union/Find structures using parent pointers and
-	data compression.
-
-The comments in the code, along with this outline should be adequate to explain how the code functions. If not, more detailed documentation can be provided -- contact mfms@ncsu.edu.
 
 ## Sample inputs
 
@@ -90,3 +53,30 @@ All have a `.txt` extension.
 
 * `2016-Theory_Seminar-Fig_*` - examples (figures) from the paper *A Gentle Introduction to Matroid Algorithmics*, in `2016-Theory_Reading_Group.pdf`; pictures related to these are in the related pdf files
 
+* `stsh_counterexample` - example corresponding to an erroneous result in the Pascal implementation, fixed in the Python implementation (no augmenting step is found in the Pascal implementation while there should be one.)
+
+* `stsh_old_crash1` and `stsh_old_crash3` - two examples causing a crash in the Pascal implementation during a blossom step.
+
+## Technical details
+
+The implementation of the base graph in `base_graph.py`, used only to test the validity of a matching and to get an initial matching, uses the Python library `networkx`. For longevity, an implementation that does not use `networkx` could be interesting.
+
+- `main.py` executes the entire input parsing to solving pipeline. For more details on the execution, at the top of the file you can set `solver.VERBOSE = True`.
+
+- `input_parsing.py` transforms the information from stdin into a BaseGraph defined in `base_graph.py`.
+
+- `base_graph.py` is an interface for a standard graph data structure.
+
+- `union_find.py` is a very short and non-optimal Union-Find implementation for Kruskal's algorithm.
+
+- `dependency_graph.py` implements the dependency graph for graphical matroid parity. A few adjustments are needed to make it handle more general matroids.
+
+- `solver.py` contains the Linear Matroid Parity algorithm.
+
+## Fix
+
+The original implementation as well as the paper specification of the algorithm contains a subtle bug in the definition of the search path for a transform with a reverse pointer, which causes the original implementation to give erroneous results (and sometimes crash?).
+
+The definition of a search path for a transform `e` with a reverse pointer `g` and parent pointer `f` is the following: `e P(g, bar(t0))^r P(f)`.
+
+By replacing `P(g, bar(t0))^r` with `(P(g, t0)-t0)^r`, it seems we get the proper results.

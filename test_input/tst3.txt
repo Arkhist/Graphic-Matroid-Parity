@@ -1,0 +1,31 @@
+14
+7 8	a
+1 4
+1 2	b
+7 9
+7 9	c
+1 3
+2 3	d
+7 10
+7 10	e
+7 11
+7 11	f
+3 4
+2 5	g
+7 12
+7 12	h
+7 13
+7 13	i
+2 6
+5 6	j
+6 7
+6 7	k
+4 7
+7 8	x
+7 14
+4 5	y
+7 14
+0 0
+0
+This is Figure 2.2 from the cardinality paper (p. 151), modified to test
+various hypotheses about the weighted problem.

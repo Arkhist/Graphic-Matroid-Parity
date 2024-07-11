@@ -8,9 +8,8 @@ solver.VERBOSE = True
 """
 Python implementation of Stallmann's algorithm for Graphic Matroid Parity
 
-Benjamin Peyrille - 2022
+Benjamin Peyrille (Gardes-Sol) - 2022
 """
-
 
 if __name__ == "__main__":
     graph, matching_ids = input_parsing.read_base_graph_from_stsh_input()

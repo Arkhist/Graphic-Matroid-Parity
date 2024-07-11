@@ -28,11 +28,11 @@ def read_base_graph_from_stsh_input() -> tuple[base_graph.BaseGraph, list[int]]:
 
     # Read edges
     try:
-        x, y = [int(e) for e in input().split(' ')]
+        x, y = [int(e) for e in input().split()[:2]]
         while x > 0 and y > 0:
             edges_to_add.append((x-1, y-1, edges_added))
             edges_added += 1
-            x, y = [int(e) for e in input().split(' ')]
+            x, y = [int(e) for e in input().split()[:2]]
     # Edge reading error handling
     except ValueError:
         print('Input is malformed: edge entry is not two vertices \'x y\'', file=sys.stderr)
@@ -46,10 +46,10 @@ def read_base_graph_from_stsh_input() -> tuple[base_graph.BaseGraph, list[int]]:
 
     # Read matching
     try:
-        e = int(input())
+        e = int(input().split()[0])
         while e > 0:
             matching.append(e-1)
-            e = int(input())
+            e = int(input().split()[0])
         matching.sort()
     # Matching reading error handling
     except ValueError:

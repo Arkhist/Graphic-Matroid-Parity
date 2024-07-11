@@ -1,0 +1,47 @@
+18        Figure 9 from theory seminar readers guide, Week 8, Spring 2016
+1 2    a     1,2
+2 3
+2 3    b     3,4
+3 6
+3 10   c     5,6
+2 5
+2 5    d     7,8
+5 9
+7 10   e     9,10
+5 9
+5 8    f     11,12
+8 9
+3 7    g     13,14
+4 7
+6 10   h     15,16
+10 11
+8 9    i     17,18
+9 12
+4 7    j     19,20
+4 13
+4 13   k     21,22
+13 14  from here on, we're just extending j's path to prevent early entrance
+13 14  ell   23,24
+15 16
+15 16  m     25,26
+16 17
+16 17  n     27,28
+17 18
+0 0
+3            b
+4
+7            d
+8
+13           g
+14
+15           h
+16
+17           i
+18
+21           k
+22
+25           m
+26
+0
+initial matching is {b, d, g, h, i}
+final matching should be {a, c, e, f, j}
