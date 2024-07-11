@@ -10,9 +10,9 @@ Benjamin Peyrille (Gardes-Sol) made in 2022, who may be contacted at `benjamin.p
 
 The original implementation in Pascal was written in Summer, 1985, by Gerald M. 
 Shapiro under the direction of Matthias (Matt) Stallmann, who may be contacted at
-`mfms@ncsu.edu`
+`mfms@ncsu.edu`.
 
-Please see the LICENSE file for information about condiditions of use.
+Please see the LICENSE file for information about conditions of use.
 
 If you use this program, let us know how you used it and send us 
 any corrections, modifications, or reimplementations.
